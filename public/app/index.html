@@ -108,7 +108,9 @@
           <img class="icon" src="${row.webIcon}" alt="">
           <div class="name">${row.name}</div>
           <div>${row.channel && IPA.langString('Channel') + ': ' + row.channel || ''}</div>
-          <div>${IPA.langString('Beta')} - ${row.version}(Build ${row.build}) - ${IPA.sizeStr(row.size)}</div>
+          <div>${row.platform_id}-${row.project_id}-${row.env}-${row.region}</div>
+          <div>${row.version}(Build ${row.build})-${IPA.sizeStr(row.size)}</div>
+          <div>${row.description}</div>
           <div class='date'>
             <img class="type" src="/img/${row.type===0?'ios':'android'}.svg"></img>
             <span class="title">${IPA.langString('Upload Date: ')}${dayjs(row.date).fromNow()}</span>

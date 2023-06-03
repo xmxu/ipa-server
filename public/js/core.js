@@ -151,9 +151,11 @@
             ${row.current ? `<span class="tag">${langString('Current')}</span>` : ''}
           </div>
           <div class="version">
+            <span>${row.platform_id}-${row.project_id}-${row.env}-${row.region}</span>
             <span>${row.version}(Build ${row.build})</span>
             <span>${row.channel && IPA.langString('Channel') + ': '+row.channel || ''}</span>
           </div>
+          <div class="date">${row.description}</div>
           <div class="date">${IPA.langString('Upload Date: ')}${dayjs(row.date).fromNow()}</div>
         </div>
         <div onclick="${onInstallClick(row)}" style="pointer-events:auto;" class="right">${IPA.langString('Download')}</div>
