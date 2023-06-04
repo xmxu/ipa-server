@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iineva/ipa-server/pkg/aab"
 	"github.com/iineva/ipa-server/pkg/apk"
 	"github.com/iineva/ipa-server/pkg/ipa"
 	"github.com/iineva/ipa-server/pkg/storager"
@@ -77,6 +78,7 @@ type Service interface {
 type Reader interface {
 	io.Reader
 	io.ReaderAt
+	io.Seeker
 	Size() int64
 }
 
@@ -198,7 +200,6 @@ func (s *service) addPackage(r Reader, t AppInfoType, pext PackageExt) (*AppInfo
 	if err := s.store.Save(pkgTempFileName, r); err != nil {
 		return nil, err
 	}
-
 	// parse package
 	var pkg Package
 	var err error
@@ -207,6 +208,8 @@ func (s *service) addPackage(r Reader, t AppInfoType, pext PackageExt) (*AppInfo
 		pkg, err = ipa.Parse(r, r.Size())
 	case AppInfoTypeApk:
 		pkg, err = apk.Parse(r, r.Size())
+	case AppInfoTypeAab:
+		pkg, err = aab.Parse(r, r.Size())
 	}
 	if err != nil {
 		return nil, err

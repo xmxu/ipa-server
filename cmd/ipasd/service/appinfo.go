@@ -100,7 +100,7 @@ type PackageExter struct {
 
 func ParsePackageExt(filename, description string) *PackageExter {
 	//Plinko_v1.0.58_cv108_2305121850_GOOGLE_6_810_release-cn.apk
-	re := regexp.MustCompile(`.*_(\d+)_(\d+)_(\w+)(?:-(\w+))?\.apk`)
+	re := regexp.MustCompile(`.*_(\d+)_(\d+)_(\w+)(?:-(\w+))?\.[apk|aab]`)
 	matches := re.FindStringSubmatch(filename)
 	if len(matches) >= 4 {
 		platformID, _ := strconv.ParseInt(matches[1], 10, 0)

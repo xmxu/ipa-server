@@ -141,6 +141,12 @@
                 }
             });
             icons.sort().reverse()
+            var android_tag = ''
+            if (row.type === 1) {
+                android_tag = 'Apk'
+            } else if (row.type === 2) {
+                android_tag = 'Aab'
+            }
             return `
       <a class='row' onclick="${`goToLink(event, '/app?id=${row.id}')`}">
         <img data-normal="${row.webIcon}" alt="">
@@ -149,6 +155,7 @@
             ${row.name}
             ${icons.map(t => `<img class="icon-tag ${t}" src="/img/${t}.svg">`).join('')}
             ${row.current ? `<span class="tag">${langString('Current')}</span>` : ''}
+            ${android_tag}
           </div>
           <div class="version">
             <span>${row.platform_id}-${row.project_id}-${row.env}-${row.region}</span>

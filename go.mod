@@ -19,5 +19,7 @@ require (
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shogo82148/androidbinary v1.0.2
 	github.com/spf13/afero v1.6.0
+	github.com/stretchr/testify v1.8.4 // indirect
+	github.com/xmxu/aab-parser v0.1.0
 	howett.net/plist v0.0.0-20201203080718-1454fab16a06
 )
