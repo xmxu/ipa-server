@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"image"
 	"path"
 	"path/filepath"
@@ -169,5 +170,31 @@ func (a *AppInfo) IconStorageName() string {
 }
 
 func (a *AppInfo) PackageStorageName() string {
-	return filepath.Join(a.Identifier, a.ID, a.Type.StorageName())
+	return filepath.Join(a.Identifier, a.ID, a.storageName())
+}
+
+func (a *AppInfo) storageName() string {
+	name := strings.Builder{}
+	name.WriteString(a.Name)
+	name.WriteByte('_')
+	name.WriteString(fmt.Sprintf("v%s_%s_%s_%d_%d", a.Version, a.Build, a.Date.Format("200601021504"), a.PlatformID, a.ProjectID))
+	if len(a.Env) > 0 {
+		name.WriteByte('_')
+		name.WriteString(a.Env)
+	}
+	if len(a.Region) > 0 {
+		name.WriteByte('_')
+		name.WriteString(a.Region)
+	}
+	switch a.Type {
+	case AppInfoTypeApk:
+		name.WriteString(".apk")
+	case AppInfoTypeAab:
+		name.WriteString(".aab")
+	case AppInfoTypeIpa:
+		name.WriteString(".ipa")
+	case AppInfoTypeUnknown:
+		name.WriteString("_unknown")
+	}
+	return name.String()
 }
