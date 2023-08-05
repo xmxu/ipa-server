@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/iineva/CgbiPngFix/ipaPng"
+	"github.com/poolqa/CgbiPngFix/ipaPng"
 
-	"github.com/iineva/bom/pkg/asset"
 	"github.com/iineva/ipa-server/pkg/plist"
 	"github.com/iineva/ipa-server/pkg/seekbuf"
+	"github.com/xmxu/bom/pkg/asset"
 )
 
 var (
@@ -195,6 +195,7 @@ func parseIconImage(iconFile *zip.File) (image.Image, error) {
 	img, err := png.Decode(buf)
 	if err != nil {
 		// try fix to std png
+		buf.Seek(0, 0)
 		cgbi, err := ipaPng.Decode(buf)
 		if err != nil {
 			return nil, err
