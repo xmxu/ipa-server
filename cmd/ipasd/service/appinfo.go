@@ -1,9 +1,12 @@
 package service
 
 import (
+	"fmt"
 	"image"
 	"path"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,22 +15,28 @@ import (
 
 type AppInfoType int
 type AppInfo struct {
-	ID         string      `json:"id"`
-	Name       string      `json:"name"`
-	Version    string      `json:"version"`
-	Identifier string      `json:"identifier"`
-	Build      string      `json:"build"`
-	Channel    string      `json:"channel"`
-	Date       time.Time   `json:"date"`
-	Size       int64       `json:"size"`
-	NoneIcon   bool        `json:"noneIcon"`
-	Type       AppInfoType `json:"type"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Version     string      `json:"version"`
+	Identifier  string      `json:"identifier"`
+	Build       string      `json:"build"`
+	Channel     string      `json:"channel"`
+	Date        time.Time   `json:"date"`
+	Size        int64       `json:"size"`
+	NoneIcon    bool        `json:"noneIcon"`
+	Type        AppInfoType `json:"type"`
+	Env         string      `json:"env"`
+	ProjectID   int         `json:"project_id"`
+	PlatformID  int         `json:"platform_id"`
+	Description string      `json:"description"`
+	Region      string      `json:"region"`
 	// Metadata   plist.Plist `json:"metadata"` // metadata from Info.plist
 }
 
 const (
 	AppInfoTypeIpa     = AppInfoType(0)
 	AppInfoTypeApk     = AppInfoType(1)
+	AppInfoTypeAab     = AppInfoType(2)
 	AppInfoTypeUnknown = AppInfoType(-1)
 )
 
@@ -37,6 +46,8 @@ func (t AppInfoType) StorageName() string {
 		return "ipa.ipa"
 	case AppInfoTypeApk:
 		return "apk.apk"
+	case AppInfoTypeAab:
+		return "aab.aab"
 	default:
 		return "unknown"
 	}
@@ -49,6 +60,8 @@ func FileType(n string) AppInfoType {
 		return AppInfoTypeIpa
 	case ".apk":
 		return AppInfoTypeApk
+	case ".aab":
+		return AppInfoTypeAab
 	default:
 		return AppInfoTypeUnknown
 	}
@@ -70,18 +83,82 @@ type Package interface {
 	Size() int64
 }
 
-func NewAppInfo(i Package, t AppInfoType) *AppInfo {
+type PackageExt interface {
+	Env() string
+	PlatformID() int
+	ProjectID() int
+	Description() string
+	Region() string
+}
+
+type PackageExter struct {
+	env         string
+	platformID  int
+	projectID   int
+	description string
+	region      string
+}
+
+func ParsePackageExt(filename, description string) *PackageExter {
+	//Plinko_v1.0.58_cv108_2305121850_GOOGLE_6_810_release-cn.apk
+	re := regexp.MustCompile(`.*_(\d+)_(\d+)_(\w+)(?:-(\w+))?\.[apk|aab]`)
+	matches := re.FindStringSubmatch(filename)
+	if len(matches) >= 4 {
+		platformID, _ := strconv.ParseInt(matches[1], 10, 0)
+		projectID, _ := strconv.ParseInt(matches[2], 10, 0)
+		env := matches[3]
+		region := ""
+		if len(matches) >= 5 {
+			region = matches[4]
+		}
+		return &PackageExter{
+			env:         env,
+			platformID:  int(platformID),
+			projectID:   int(projectID),
+			description: description,
+			region:      region,
+		}
+	}
+	return &PackageExter{}
+}
+
+func (p *PackageExter) Env() string {
+	return p.env
+}
+
+func (p *PackageExter) PlatformID() int {
+	return p.platformID
+}
+
+func (p *PackageExter) ProjectID() int {
+	return p.projectID
+}
+
+func (p *PackageExter) Description() string {
+	return p.description
+}
+
+func (p *PackageExter) Region() string {
+	return p.region
+}
+
+func NewAppInfo(i Package, t AppInfoType, pext PackageExt) *AppInfo {
 	return &AppInfo{
-		ID:         uuid.NewString(),
-		Name:       i.Name(),
-		Version:    i.Version(),
-		Identifier: i.Identifier(),
-		Build:      i.Build(),
-		Channel:    i.Channel(),
-		Date:       time.Now(),
-		Size:       i.Size(),
-		Type:       t,
-		NoneIcon:   i.Icon() == nil,
+		ID:          uuid.NewString(),
+		Name:        i.Name(),
+		Version:     i.Version(),
+		Identifier:  i.Identifier(),
+		Build:       i.Build(),
+		Channel:     i.Channel(),
+		Date:        time.Now(),
+		Size:        i.Size(),
+		Type:        t,
+		NoneIcon:    i.Icon() == nil,
+		Env:         pext.Env(),
+		ProjectID:   pext.ProjectID(),
+		PlatformID:  pext.PlatformID(),
+		Description: pext.Description(),
+		Region:      pext.Region(),
 	}
 }
 
@@ -93,5 +170,31 @@ func (a *AppInfo) IconStorageName() string {
 }
 
 func (a *AppInfo) PackageStorageName() string {
-	return filepath.Join(a.Identifier, a.ID, a.Type.StorageName())
+	return filepath.Join(a.Identifier, a.ID, a.storageName())
+}
+
+func (a *AppInfo) storageName() string {
+	name := strings.Builder{}
+	name.WriteString(a.Name)
+	name.WriteByte('_')
+	name.WriteString(fmt.Sprintf("v%s_%s_%s_%d_%d", a.Version, a.Build, a.Date.Format("200601021504"), a.PlatformID, a.ProjectID))
+	if len(a.Env) > 0 {
+		name.WriteByte('_')
+		name.WriteString(a.Env)
+	}
+	if len(a.Region) > 0 {
+		name.WriteByte('_')
+		name.WriteString(a.Region)
+	}
+	switch a.Type {
+	case AppInfoTypeApk:
+		name.WriteString(".apk")
+	case AppInfoTypeAab:
+		name.WriteString(".aab")
+	case AppInfoTypeIpa:
+		name.WriteString(".ipa")
+	case AppInfoTypeUnknown:
+		name.WriteString("_unknown")
+	}
+	return name.String()
 }

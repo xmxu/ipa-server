@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-  <title>IPA Server</title>
+  <link rel="Shortcut Icon" type="image/x-icon" href="/img/favicon.ico">
+  <title>哈士奇应用包分发平台</title>
   <script type="text/javascript" src="/js/layzr.min.js"></script>
   <script type="text/javascript" src="/js/dayjs.min.js"></script>
   <script type="text/javascript" src="/js/dayjs.zh-cn.min.js"></script>
@@ -40,57 +41,8 @@
 </head>
 
 <body>
-  <form>
-    <input class="file" type="file" name="file" value="" accept=".ipa,.apk" />
-    <div class="add-btn">Add</div>
-  </form>
   <div id="list"></div>
   <script type="text/javascript">
-
-    function updateAddProgress(progress) {
-      const add = document.querySelector(".add-btn")
-      if (progress === 0) {
-        add.innerHTML = IPA.langString('Add')
-      } else if (progress === 1) {
-        add.innerHTML = IPA.langString('Upload Done!')
-        setTimeout(() => {
-          add.innerHTML = IPA.langString('Add')
-        }, 2000)
-      } else {
-        add.innerHTML = `${(progress * 100).toFixed(2)}%`
-      }
-    }
-
-    let uploading = false
-    window.onbeforeunload = () => uploading ? true : undefined
-    document.querySelector(".file").addEventListener("change", e => {
-      if (e.target.files.length === 0) {
-        return;
-      }
-      const data = new FormData()
-      data.append('file', e.target.files[0])
-      uploading = true
-      IPA.fetch(IPA.getApiUrl('/api/upload'), {
-        method: 'POST',
-        body: data,
-      }, progress => {
-        updateAddProgress(progress.loaded / progress.total)
-      }).then(json => {
-        e.target.value = ''
-        uploading = false
-        if (json.err) {
-          alert(json.err)
-          return
-        }
-        loadList()
-      }).catch(err => {
-        uploading = false
-        updateAddProgress(0)
-      })
-    })
-    document.querySelector(".add-btn").addEventListener("click", e => {
-      uploading || document.querySelector(".file").click()
-    })
 
     // init lazy load
     const instance = Layzr({
@@ -107,9 +59,9 @@
     }
 
     window.addEventListener('load', loadList)
-    document.querySelector('.add-btn').innerHTML = IPA.langString('Add')
 
   </script>
 </body>
 
 </html>
+

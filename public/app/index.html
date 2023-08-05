@@ -10,7 +10,8 @@
   <script type="text/javascript" src="/js/qrcode.min.js"></script>
   <script type="text/javascript" src="/js/core.js"></script>
   <link rel="stylesheet" type="text/css" href="/css/core.css">
-  <title>IPA Server</title>
+  <title>哈士奇应用包分发平台</title>
+  <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
   <style type="text/css">
     * {
       padding: 0;
@@ -104,11 +105,19 @@
 
     function loadInfo(del) {
       IPA.fetch(`/api/info/${query().id}?v=${parseInt(new Date().getTime() / 1000)}`).then(row => {
+        var android_tag = ''
+        if (row.type === 1) {
+            android_tag = '(Apk)'
+        } else if (row.type === 2) {
+            android_tag = '(Aab)'
+        }
         document.querySelector('#info').innerHTML = `
           <img class="icon" src="${row.webIcon}" alt="">
-          <div class="name">${row.name}</div>
+          <div class="name">${row.name}<span>${android_tag}</span></div>
           <div>${row.channel && IPA.langString('Channel') + ': ' + row.channel || ''}</div>
-          <div>${IPA.langString('Beta')} - ${row.version}(Build ${row.build}) - ${IPA.sizeStr(row.size)}</div>
+          <div>${row.platform_id}-${row.project_id}-${row.env}-${row.region}</div>
+          <div>${row.version}(Build ${row.build})-${IPA.sizeStr(row.size)}</div>
+          <div>${row.description}</div>
           <div class='date'>
             <img class="type" src="/img/${row.type===0?'ios':'android'}.svg"></img>
             <span class="title">${IPA.langString('Upload Date: ')}${dayjs(row.date).fromNow()}</span>

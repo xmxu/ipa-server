@@ -141,6 +141,12 @@
                 }
             });
             icons.sort().reverse()
+            var android_tag = ''
+            if (row.type === 1) {
+                android_tag = 'Apk'
+            } else if (row.type === 2) {
+                android_tag = 'Aab'
+            }
             return `
       <a class='row' onclick="${`goToLink(event, '/app?id=${row.id}')`}">
         <img data-normal="${row.webIcon}" alt="">
@@ -149,11 +155,14 @@
             ${row.name}
             ${icons.map(t => `<img class="icon-tag ${t}" src="/img/${t}.svg">`).join('')}
             ${row.current ? `<span class="tag">${langString('Current')}</span>` : ''}
+            ${android_tag}
           </div>
           <div class="version">
+            <span>${row.platform_id}-${row.project_id}-${row.env}-${row.region}</span>
             <span>${row.version}(Build ${row.build})</span>
             <span>${row.channel && IPA.langString('Channel') + ': '+row.channel || ''}</span>
           </div>
+          <div class="date">${row.description}</div>
           <div class="date">${IPA.langString('Upload Date: ')}${dayjs(row.date).fromNow()}</div>
         </div>
         <div onclick="${onInstallClick(row)}" style="pointer-events:auto;" class="right">${IPA.langString('Download')}</div>

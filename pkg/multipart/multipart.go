@@ -13,6 +13,8 @@ type MultipartForm struct {
 	r *http.Request
 }
 
+type FormParts map[string]*multipart.Part
+
 type FormFile struct {
 	part     *multipart.Part
 	name     string // form name
@@ -20,10 +22,41 @@ type FormFile struct {
 	// size     int64  // readed size
 }
 
+func ToFormFile(p *multipart.Part) *FormFile {
+	formName := p.FormName()
+	filename := p.FileName()
+	return &FormFile{
+		part:     p,
+		name:     formName,
+		filename: filename,
+	}
+}
+
 var _ io.Reader = (*FormFile)(nil)
 
 func New(r *http.Request) *MultipartForm {
 	return &MultipartForm{r: r}
+}
+
+func (m *MultipartForm) GetParts() (*FormParts, error) {
+	mr, err := m.multipartReader(false)
+	if err != nil {
+		return nil, err
+	}
+	parts := FormParts{}
+	for {
+		p, err := mr.NextPart()
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return nil, err
+			}
+		}
+		parts[p.FormName()] = p
+	}
+
+	return &parts, nil
 }
 
 func (m *MultipartForm) GetFormFile(targetName string) (*FormFile, error) {

@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iineva/ipa-server/pkg/aab"
 	"github.com/iineva/ipa-server/pkg/apk"
 	"github.com/iineva/ipa-server/pkg/ipa"
 	"github.com/iineva/ipa-server/pkg/storager"
@@ -40,6 +41,12 @@ type Item struct {
 	Version    string    `json:"version"`
 	Identifier string    `json:"identifier"`
 
+	Env         string `json:"env"`
+	ProjectID   int    `json:"project_id"`
+	PlatformID  int    `json:"platform_id"`
+	Description string `json:"description"`
+	Region      string `json:"region"`
+
 	// package download link
 	Pkg string `json:"pkg"`
 	// Icon to display on iOS desktop
@@ -64,13 +71,14 @@ type Service interface {
 	Find(id string, publicURL string) (*Item, error)
 	History(id string, publicURL string) ([]*Item, error)
 	Delete(id string) error
-	Add(r Reader, t AppInfoType) error
+	Add(r Reader, t AppInfoType, pext PackageExt) error
 	Plist(id, publicURL string) ([]byte, error)
 }
 
 type Reader interface {
 	io.Reader
 	io.ReaderAt
+	io.Seeker
 	Size() int64
 }
 
@@ -171,9 +179,9 @@ func (s *service) Delete(id string) error {
 	return nil
 }
 
-func (s *service) Add(r Reader, t AppInfoType) error {
+func (s *service) Add(r Reader, t AppInfoType, pext PackageExt) error {
 
-	app, err := s.addPackage(r, t)
+	app, err := s.addPackage(r, t, pext)
 	if err != nil {
 		return err
 	}
@@ -186,13 +194,12 @@ func (s *service) Add(r Reader, t AppInfoType) error {
 	return s.saveMetadata()
 }
 
-func (s *service) addPackage(r Reader, t AppInfoType) (*AppInfo, error) {
+func (s *service) addPackage(r Reader, t AppInfoType, pext PackageExt) (*AppInfo, error) {
 	// save ipa file to temp
 	pkgTempFileName := filepath.Join(tempDir, uuid.NewString())
 	if err := s.store.Save(pkgTempFileName, r); err != nil {
 		return nil, err
 	}
-
 	// parse package
 	var pkg Package
 	var err error
@@ -201,13 +208,15 @@ func (s *service) addPackage(r Reader, t AppInfoType) (*AppInfo, error) {
 		pkg, err = ipa.Parse(r, r.Size())
 	case AppInfoTypeApk:
 		pkg, err = apk.Parse(r, r.Size())
+	case AppInfoTypeAab:
+		pkg, err = aab.Parse(r, r.Size())
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	// new AppInfo
-	app := NewAppInfo(pkg, t)
+	app := NewAppInfo(pkg, t, pext)
 	if err != nil {
 		return nil, err
 	}
@@ -322,15 +331,20 @@ func (s *service) itemInfo(row *AppInfo, publicURL string) *Item {
 
 	return &Item{
 		// from AppInfo
-		ID:         row.ID,
-		Name:       row.Name,
-		Date:       row.Date,
-		Size:       row.Size,
-		Build:      row.Build,
-		Identifier: row.Identifier,
-		Version:    row.Version,
-		Channel:    row.Channel,
-		Type:       row.Type,
+		ID:          row.ID,
+		Name:        row.Name,
+		Date:        row.Date,
+		Size:        row.Size,
+		Build:       row.Build,
+		Identifier:  row.Identifier,
+		Version:     row.Version,
+		Channel:     row.Channel,
+		Type:        row.Type,
+		Env:         row.Env,
+		ProjectID:   row.ProjectID,
+		PlatformID:  row.PlatformID,
+		Description: row.Description,
+		Region:      row.Region,
 
 		Pkg:     s.storagerPublicURL(publicURL, row.PackageStorageName()),
 		Plist:   plist,

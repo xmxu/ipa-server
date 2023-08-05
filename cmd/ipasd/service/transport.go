@@ -32,7 +32,8 @@ type delParam struct {
 }
 
 type addParam struct {
-	file *pkgMultipart.FormFile
+	file        *pkgMultipart.FormFile
+	description string
 }
 
 type data interface{}
@@ -72,8 +73,8 @@ func MakeAddEndpoint(srv Service) endpoint.Endpoint {
 		if t == AppInfoTypeUnknown {
 			return nil, fmt.Errorf("do not support %s file", path.Ext(p.file.FileName()))
 		}
-
-		if err := srv.Add(buf, t); err != nil {
+		pext := ParsePackageExt(p.file.FileName(), p.description)
+		if err := srv.Add(buf, t, pext); err != nil {
 			return nil, err
 		}
 		return map[string]string{"msg": "ok"}, nil
@@ -142,7 +143,26 @@ func DecodeAddRequest(_ context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 
-	return addParam{file: f}, nil
+	return addParam{file: f, description: ""}, nil
+
+	// m := pkgMultipart.New(r)
+	// parts, err := m.GetParts()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// f, ok := (*parts)["file"]
+	// if !ok {
+	// 	return nil, errors.New("file not found")
+	// }
+	// description := ""
+	// if d, ok := (*parts)["description"]; ok {
+	// 	buf := new(bytes.Buffer)
+	// 	if _, err := buf.ReadFrom(d); err == nil {
+	// 		description = buf.String()
+	// 	}
+	// }
+
+	// return addParam{file: pkgMultipart.ToFormFile(f), description: description}, nil
 }
 
 func DecodeDeleteRequest(_ context.Context, r *http.Request) (interface{}, error) {
